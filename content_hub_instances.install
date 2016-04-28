@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function content_hub_instances_install() {
+  $entity = new stdClass;
+  $entity->name = 'Default';
+  $entity->api_key = variable_get('content_hub_connector_api_key', '');
+  $entity->hostname = variable_get('content_hub_connector_hostname', '');
+  $entity->secret_key = variable_get('content_hub_connector_secret_key', '');
+
+  if (!empty($entity->api_key)) {
+    content_hub_instance_save($entity);
+
+    $client = new stdClass;
+    $client->instance = $entity->uuid;
+    $client->client_name = variable_get('content_hub_connector_client_name', '');
+    $client->origin = variable_get('content_hub_connector_origin', '');
+    $client->webhook_url = variable_get('content_hub_connector_webhook_url', '');
+    $client->webhook_uuid = variable_get('content_hub_connector_webhook_uuid', '');
+    content_hub_instances_client_save($client);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+ function content_hub_instances_schema() {
+   module_load_install('uuid');
+   $schema['content_hub_instance'] = array(
+     'description' => 'Storage for Content Hub instance configuration.',
+     'fields' => array(
+       'uuid' => uuid_schema_field_definition(),
+       'name' => array(
+         'description' => 'The name of this instance.',
+         'type' => 'varchar',
+         'length' => 128,
+         'not null' => TRUE,
+       ),
+       'api_key' => array(
+         'description' => 'API key to connect to',
+         'type' => 'varchar',
+         'length' => 40,
+         'not null' => TRUE,
+       ),
+       'secret_key' => array(
+         'description' => 'The Secret Key to use with the API key.',
+         'type' => 'varchar',
+         'length' => 128,
+         'not null' => TRUE,
+       ),
+       'hostname' => array(
+         'description' => 'URL where Content Hub resides.',
+         'type' => 'varchar',
+         'length' => 128,
+         'not null' => TRUE,
+       ),
+     ),
+     'primary key' => array('uuid'),
+   );
+
+   $schema['content_hub_client'] = array(
+     'description' => 'Storage for Content Hub instance configuration.',
+     'fields' => array(
+       'origin' => uuid_schema_field_definition(),
+       'instance' => uuid_schema_field_definition(),
+       'client_name' => array(
+         'description' => 'The name of this client.',
+         'type' => 'varchar',
+         'length' => 128,
+         'not null' => TRUE,
+       ),
+       'shared_secret' => array(
+         'description' => 'The Shared Secret to use with the API key.',
+         'type' => 'varchar',
+         'length' => 64,
+         'not null' => FALSE,
+       ),
+       'webhook_url' => array(
+         'description' => 'The URL of this client webhook.',
+         'type' => 'varchar',
+         'length' => 1024,
+         'not null' => FALSE,
+       ),
+       'webhook_uuid' => uuid_schema_field_definition() + array('not null' => FALSE),
+     ),
+     'primary key' => array('origin'),
+   );
+   return $schema;
+ }

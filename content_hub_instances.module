@@ -1,0 +1,238 @@
+<?php
+
+use Acquia\ContentHubClient as ContentHubClient;
+
+/**
+ * Implements hook_entity_info().
+ */
+function content_hub_instances_entity_info() {
+  $types = [];
+  $types['content_hub_instance'] = array(
+    'label' => t('Content Hub Instance'),
+    'controller class' => 'DrupalDefaultEntityController',
+    'base table' => 'content_hub_instance',
+    'uri callback' => 'content_hub_instance_uri',
+    'fieldable' => FALSE,
+    'entity keys' => array(
+      'id' => 'uuid',
+      'label' => 'name',
+    ),
+    'view modes' => array(
+      'creds' => array(
+        'label' => t('Credentials'),
+        'custom settings' => FALSE,
+      ),
+    ),
+  );
+  return $types;
+}
+
+/**
+ * Implements hook_menu().
+ */
+ function content_hub_instances_menu() {
+   $items['admin/config/services/content-hub/add'] = array(
+     'title' => 'Add new API Endpoint',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('content_hub_instances_form'),
+     'access arguments' => array('administer content hub connector'),
+     'file' => 'content_hub_instances.instance.inc',
+     'type' => MENU_LOCAL_ACTION,
+     'weight' => 20,
+   );
+   $items['admin/config/services/content-hub/%content_hub_instance/edit'] = array(
+     'title' => 'Edit',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('content_hub_instances_form', 4),
+     'access arguments' => array('administer content hub connector'),
+     'file' => 'content_hub_instances.instance.inc',
+     'type' => MENU_CALLBACK,
+     'weight' => 20,
+   );
+  //  $items['admin/config/services/content-hub/%content_hub_instance/remove'] = array(
+  //    'title' => 'Add',
+  //    'page callback' => 'drupal_get_form',
+  //    'page arguments' => array('content_hub_instances_remove_form'),
+  //    'access arguments' => array('administer content hub connector'),
+  //    'file' => 'content_hub_instances.instance.inc',
+  //    'type' => MENU_LOCAL_TASK,
+  //    'weight' => 20,
+  //  );
+
+  // Client callbacks.
+  $items['admin/config/services/content-hub/%content_hub_instance/register'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_hub_instances_client_form', 4),
+    'access arguments' => array('administer content hub connector'),
+    'file' => 'content_hub_instances.client.inc',
+    'type' => MENU_CALLBACK,
+    'weight' => 20,
+  );
+  $items['admin/config/services/content-hub/client/%content_hub_instances_client/deregister'] = array(
+    'title' => 'Unregister',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_hub_instances_client_deregister_form', 5),
+    'access arguments' => array('administer content hub connector'),
+    'file' => 'content_hub_instances.client.inc',
+    'type' => MENU_CALLBACK,
+    'weight' => 20,
+  );
+  $items['admin/config/services/content-hub/client/%content_hub_instances_client/promote'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('content_hub_instances_client_promote_form', 5),
+    'access arguments' => array('administer content hub connector'),
+    'file' => 'content_hub_instances.client.inc',
+    'type' => MENU_CALLBACK,
+    'weight' => 20,
+  );
+
+  $items['content-hub/webhook/%content_hub_instances_client'] = array(
+    'page callback' => 'content_hub_instances_webhook',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    // 'delivery callback' => 'drupal_json_output',.
+    'file' => 'content_hub_instances.webhook.inc',
+  );
+
+   return $items;
+ }
+
+ /**
+  * Implements hook_menu_alter().
+  */
+function content_hub_instances_menu_alter(&$items) {
+
+  $items['admin/config/services/content-hub'] = array(
+    'title' => 'Content Hub Connector',
+    'description' => 'Manages the service connection information',
+    'page callback' => 'content_hub_instances_list',
+    'access arguments' => array('administer content hub connector'),
+    'file' => 'content_hub_instances.instance.inc',
+    'weight' => 1,
+    'module' => 'content_hub_instances',
+  );
+}
+
+/**
+ * URL callback for content hub instance entity.
+ */
+ function content_hub_instance_uri($entity) {
+   return array('path'=> 'admin/config/services/content-hub/' . $entity->uuid . '/edit');
+ }
+
+ /**
+  * Load function for content hub instance entity.
+  */
+  function content_hub_instance_load($uuid) {
+    $result = entity_load('content_hub_instance', [$uuid]);
+    return reset($result);
+  }
+
+  /**
+   * Load function for content hub instance entity.
+   */
+  function content_hub_instance_save($entity) {
+    if (!empty($entity->is_new) || !isset($entity->uuid)) {
+      $entity->uuid = uuid_generate();
+      $entity->is_new = TRUE;
+    }
+    module_invoke_all('content_hub_instance_presave', $entity);
+    module_invoke_all('entity_presave', $entity, 'content_hub_instance');
+    drupal_write_record('content_hub_instance', $entity, empty($entity->is_new) ? ['uuid'] : []);
+
+    $op = empty($entity->is_new) ? 'update' : 'insert';
+    module_invoke_all('content_hub_instance_' . $op, $entity);
+    module_invoke_all('entity_' . $op, $entity, 'content_hub_instance');
+  }
+
+  /**
+   * Save function for content hub instance client.
+   */
+  function content_hub_instances_client_save($client) {
+    $exists = db_query('SELECT origin FROM {content_hub_client} WHERE origin = :origin', array(
+      ':origin' => $client->origin,
+    ))->fetchField();
+    $op = empty($exists) ? 'insert' : 'update';
+
+    module_invoke_all('content_hub_instance_client_presave', $client);
+    drupal_write_record('content_hub_client', $client, empty($exists) ? [] : ['origin']);
+    module_invoke_all('content_hub_instance_client_' . $op, $client);
+  }
+
+  /**
+   * Save function for content hub instance client.
+   */
+  function content_hub_instances_client_delete($client) {
+    db_delete('content_hub_client')
+      ->condition('origin', $client->origin)
+      ->execute();
+    module_invoke_all('content_hub_instance_client_delete', $client);
+  }
+
+  /**
+   * Load function for client list.
+   */
+  function content_hub_instances_load_clients() {
+    return db_query('SELECT * FROM {content_hub_client}')->fetchAll();
+  }
+
+  /**
+   * Load function for client list.
+   */
+  function content_hub_instances_client_load($origin) {
+    return db_query('SELECT * FROM {content_hub_client} WHERE origin = :origin', array(
+      ':origin' => $origin,
+    ))->fetchObject();
+  }
+
+function content_hub_instances_client_connection($client) {
+  $entity = content_hub_instance_load($client->instance);
+  // $encryption = (bool) variable_get('content_hub_connector_encryption_key_file', '');
+  //
+  // if ($encryption) {
+  //   $entity->secret_key = content_hub_connector_cipher()->decrypt($entity->secret_key);
+  // }
+  $config = array(
+    'base_url' => $entity->hostname,
+  );
+
+  $connection = new ContentHubClient\ContentHub($entity->api_key, $entity->secret_key, $client->origin, $config);
+  return $connection;
+}
+
+  /**
+   * Promote client.
+   */
+  function content_hub_instances_client_promote($client) {
+    $entity = content_hub_instance_load($client->instance);
+
+    variable_set('content_hub_connector_api_key', $entity->api_key);
+    variable_set('content_hub_connector_hostname', $entity->hostname);
+    variable_set('content_hub_connector_secret_key', $entity->secret_key);
+
+    variable_set('content_hub_connector_client_name', $client->client_name);
+    variable_set('content_hub_connector_origin', $client->origin);
+    variable_set('content_hub_connector_webhook_url', $client->webhook_url);
+    variable_set('content_hub_connector_webhook_uuid', $client->webhook_uuid);
+    return TRUE;
+  }
+
+  /**
+   * Masquerade content hub connector credentials.
+   */
+   function content_hub_instances_masquerade_credentials($client) {
+     global $conf;
+     $entity = content_hub_instance_load($client->instance);
+     $conf = [
+       'content_hub_connector_api_key' => $entity->api_key,
+       'content_hub_connector_hostname' => $entity->hostname,
+       'content_hub_connector_secret_key' => $entity->secret_key,
+       'content_hub_connector_client_name' => $client->client_name,
+       'content_hub_connector_origin' => $client->origin,
+       'content_hub_connector_webhook_url' => $client->webhook_url,
+       'content_hub_connector_webhook_uuid' => $client->webhook_uuid,
+     ] + $conf;
+   }
