@@ -10,11 +10,13 @@ use \GuzzleHttp\Exception\RequestException;
  */
 function content_hub_instances_list() {
   $list = [];
-  foreach (entity_load('content_hub_instance') as $entity) {
+  ctools_include('export');
+  foreach (ctools_export_crud_load_all('content_hub_instance') as $entity) {
     $list[$entity->uuid] = [
       'name' => $entity->name,
       'hostname' => $entity->hostname,
       'api_key' => $entity->api_key,
+      'type' => $entity->type,
     ];
     $operations = [];
     $operations['edit'] = array(
@@ -49,19 +51,20 @@ function content_hub_instances_list() {
   );
   $form['entities_wrapper']['entities'] = array(
     '#theme' => 'table',
-    '#header' => ['Name', 'Hostname', 'API Key', 'Operations'],
+    '#header' => ['Name', 'Hostname', 'API Key', 'Status', 'Operations'],
     '#rows' => $list,
     '#empty' => t('No content available.'),
   );
 
   $list = [];
-  foreach (content_hub_instances_load_clients() as $client) {
+  foreach (ctools_export_crud_load_all('content_hub_client') as $client) {
     $entity = content_hub_instance_load($client->instance);
     $list[$client->origin] = [
       'name' => $entity->name,
       'client_name' => $client->client_name,
       'origin' => $client->origin,
       'webhook' => empty($client->webhook_uuid) ? 'Disabled' : 'Enabled',
+      'type' => $client->type,
     ];
     $operations = [];
     $operations['edit'] = array(
@@ -96,7 +99,7 @@ function content_hub_instances_list() {
   );
   $form['clients_wrapper']['clients'] = array(
     '#theme' => 'table',
-    '#header' => ['API', 'Client name', 'Origin UUID', 'Webhook', 'Operations'],
+    '#header' => ['API', 'Client name', 'Origin UUID', 'Webhook', 'Status', 'Operations'],
     '#rows' => $list,
     '#empty' => t('No content available.'),
   );

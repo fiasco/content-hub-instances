@@ -74,6 +74,18 @@ function content_hub_instances_install() {
 
    $schema['content_hub_client'] = array(
      'description' => 'Storage for Content Hub instance configuration.',
+     'export' => array(
+       'key' => 'origin',
+       'admin_title' => 'client_name',
+       'key name' => 'content hub client',
+       'identifier' => 'client',
+       'api' => array(
+         'owner' => 'content_hub_instances',
+         'api' => 'content_hub_client',
+         'minimum_version' => 3,
+         'current_version' => 3,
+       ),
+     ),
      'fields' => array(
        'origin' => uuid_schema_field_definition(),
        'instance' => uuid_schema_field_definition(),
