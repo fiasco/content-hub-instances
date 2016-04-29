@@ -30,6 +30,18 @@ function content_hub_instances_install() {
    module_load_install('uuid');
    $schema['content_hub_instance'] = array(
      'description' => 'Storage for Content Hub instance configuration.',
+     'export' => array(
+       'key' => 'uuid',
+       'admin_title' => 'name',
+       'key name' => 'content hub api uuid',
+       'identifier' => 'instance',
+       'api' => array(
+         'owner' => 'content_hub_instances',
+         'api' => 'content_hub_instances',
+         'minimum_version' => 3,
+         'current_version' => 3,
+       ),
+     ),
      'fields' => array(
        'uuid' => uuid_schema_field_definition(),
        'name' => array(
