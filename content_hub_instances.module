@@ -49,15 +49,15 @@ function content_hub_instances_entity_info() {
      'type' => MENU_CALLBACK,
      'weight' => 20,
    );
-  //  $items['admin/config/services/content-hub/%content_hub_instance/remove'] = array(
-  //    'title' => 'Add',
-  //    'page callback' => 'drupal_get_form',
-  //    'page arguments' => array('content_hub_instances_remove_form'),
-  //    'access arguments' => array('administer content hub connector'),
-  //    'file' => 'content_hub_instances.instance.inc',
-  //    'type' => MENU_LOCAL_TASK,
-  //    'weight' => 20,
-  //  );
+   $items['admin/config/services/content-hub/%content_hub_instance/delete'] = array(
+     'title' => 'Add',
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('content_hub_instances_delete_form', 4),
+     'access arguments' => array('administer content hub connector'),
+     'file' => 'content_hub_instances.instance.inc',
+     'type' => MENU_LOCAL_TASK,
+     'weight' => 20,
+   );
 
   // Client callbacks.
   $items['admin/config/services/content-hub/%content_hub_instance/register'] = array(
@@ -146,6 +146,17 @@ function content_hub_instances_menu_alter(&$items) {
     $op = empty($entity->is_new) ? 'update' : 'insert';
     module_invoke_all('content_hub_instance_' . $op, $entity);
     module_invoke_all('entity_' . $op, $entity, 'content_hub_instance');
+  }
+
+  /**
+   * Delete function for content hub instance entity.
+   */
+  function content_hub_instance_delete(stdClass $entity) {
+    db_delete('content_hub_instance')
+      ->condition('uuid', $entity->uuid)
+      ->execute();
+    module_invoke_all('content_hub_instance_delete', $entity);
+    module_invoke_all('entity_delete', $entity, 'content_hub_instance');
   }
 
   /**

@@ -33,7 +33,7 @@ function content_hub_instances_list() {
 
     $operations['delete'] = array(
       'title' => t('delete'),
-      //'href' => 'admin/config/services/content-hub/' . $entity->origin . '/delete',
+      'href' => 'admin/config/services/content-hub/' . $entity->uuid . '/delete',
       'query' => ['destination' => 'admin/config/services/content-hub'],
     );
 
@@ -228,4 +228,28 @@ function content_hub_instances_form_submit($form, &$form_state) {
   // content_hub_instances_register_client($client);
   // content_hub_instances_client_save($client);
   $form_state['redirect'] = array('admin/config/services/content-hub');
+}
+
+function content_hub_instances_delete_form($form, $form_state, $instance) {
+  $form['uuid'] = array(
+    '#type' => 'hidden',
+    '#value' => $instance->uuid,
+  );
+  return confirm_form($form, 'Are you sure you want to delete ' . $instance->name . ' and associated clients?', 'admin/config/services/content-hub');
+}
+
+function content_hub_instances_delete_form_submit($form, $form_state) {
+  $instance = content_hub_instance_load($form_state['values']['uuid']);
+
+  $cids = db_query('SELECT origin FROM {content_hub_client} WHERE instance = :uuid', array(
+    ':uuid' => $instance->uuid,
+  ))->fetchCol();
+
+  foreach ($cids as $id) {
+    $client = content_hub_instances_client_load($id);
+    content_hub_instances_client_delete($client);
+  }
+
+  content_hub_instance_delete($instance);
+  drupal_set_message('API Credentials have been deleted.');
 }

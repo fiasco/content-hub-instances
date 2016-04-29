@@ -27,6 +27,19 @@ function content_hub_instances_register_webhook($client) {
   // Instantiate the client.
   $api = content_hub_instances_client_connection($client);
 
+  // Check if the webhook already exists.
+  if ($webhook = $api->getSettings()->getWebhook($client->webhook_url)) {
+
+    // If the webhook exists and its the same UUID, then here is nothing
+    // more for us to do here.
+    if ($webhook['uuid'] == $client->webhook_uuid) {
+      return TRUE;
+    }
+
+    // Its different so lets drop it.
+    $api->deleteWebhook($client->webhook_url);
+  }
+
   $success = FALSE;
   try {
     $webhook = $api->addWebhook($client->webhook_url);
