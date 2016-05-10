@@ -128,6 +128,11 @@ function content_hub_instances_menu_alter(&$items) {
   */
   function content_hub_instance_load($uuid) {
     $result = entity_load('content_hub_instance', [$uuid]);
+
+    if (empty($result)) {
+      ctools_include('export');
+      return ctools_export_crud_load('content_hub_instance', $uuid);
+    }
     return reset($result);
   }
 
