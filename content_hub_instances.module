@@ -199,9 +199,16 @@ function content_hub_instances_menu_alter(&$items) {
    * Load function for client list.
    */
   function content_hub_instances_client_load($origin) {
-    return db_query('SELECT * FROM {content_hub_client} WHERE origin = :origin', array(
+    $result = db_query('SELECT * FROM {content_hub_client} WHERE origin = :origin', array(
       ':origin' => $origin,
     ))->fetchObject();
+
+    if (empty($result)) {
+      ctools_include('export');
+      return ctools_export_crud_load('content_hub_instance', $uuid);
+    }
+
+    return $result;
   }
 
 function content_hub_instances_client_connection($client) {
