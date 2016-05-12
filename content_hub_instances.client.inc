@@ -162,6 +162,10 @@ function content_hub_instances_register_client($client) {
     // Registration successful. Setting up the origin and other variables.
     $client->origin = $site['uuid'];
 
+    // Obtain the shared secret.
+    $api = new ContentHubClient\ContentHub($entity->api_key, $entity->secret_key, $client->origin, ['base_url' => $entity->hostname]);
+    $client->shared_secret = $api->getSettings()->getSharedSecret();
+
     drupal_set_message(t('Successful Client registration with name "@name" (UUID = @uuid)', array(
       '@name' => $client->client_name,
       '@uuid' => $client->origin,

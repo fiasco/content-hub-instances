@@ -113,3 +113,17 @@ function content_hub_instances_install() {
    );
    return $schema;
  }
+
+/**
+ * Set shared_secret for all clients.
+ */
+ function content_hub_instances_update_7001() {
+   content_hub_connector_init();
+   foreach (content_hub_instances_load_clients() as $client) {
+     if (empty($client->shared_secret)) {
+       $api = content_hub_instances_client_connection($client);
+       $client->shared_secret = $api->getSettings()->getSharedSecret();
+       content_hub_instances_client_save($client);
+     }
+   }
+ }

@@ -9,6 +9,10 @@ use \GuzzleHttp\Exception\RequestException;
  * Webhook callback.
  */
  function content_hub_instances_webhook($client) {
+   if (empty($client)) {
+     drupal_not_found();
+     drupal_exit();
+   }
    content_hub_instances_masquerade_credentials($client);
    module_load_include('inc', 'content_hub_connector', 'content_hub_connector.webhook');
    content_hub_connector_webhook();
