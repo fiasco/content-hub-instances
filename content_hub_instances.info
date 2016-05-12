@@ -3,7 +3,7 @@ description = Allows you to manage multiple instances of Content Hub and which o
 core = 7.x
 php = 5.4
 package = Content Hub
-version = 7.x-1.0-alpha1
+version = 7.x-1.0-alpha2
 
 dependencies[] = content_hub_connector
 dependencies[] = uuid
