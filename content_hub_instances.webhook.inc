@@ -9,9 +9,16 @@ use \GuzzleHttp\Exception\RequestException;
  * Webhook callback.
  */
  function content_hub_instances_webhook($client) {
+   // If we're not familiar with a client (i.e. it didn't load)
+   // and we're recieving a webhook request, then its likely
+   // the client was previously registered but has since been
+   // lost with a database restore or something.
+   // Plexus doesn't know this, and if we give it a 404, it'll
+   // just keep trying for 4 days (DOC-11312). So instead, lets
+   // let Plexus this that the webhook is still around and that the
+   // payload was recieved successfully.
    if (empty($client)) {
-     drupal_not_found();
-     drupal_exit();
+     return;
    }
    content_hub_instances_masquerade_credentials($client);
    module_load_include('inc', 'content_hub_connector', 'content_hub_connector.webhook');
