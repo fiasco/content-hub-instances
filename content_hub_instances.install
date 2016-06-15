@@ -132,6 +132,7 @@ function content_hub_instances_install() {
  * Ensure the shared secret is set correctly.
  */
 function content_hub_instances_update_7002() {
-  $client = content_hub_instances_client_load();
-  variable_set('content_hub_connector_shared_secret', $client->shared_secret);
+  if ($client = content_hub_instances_client_load(variable_get('content_hub_connector_origin'))) {
+    variable_set('content_hub_connector_shared_secret', $client->shared_secret);
+  }
 }
