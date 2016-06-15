@@ -234,6 +234,7 @@ function content_hub_instances_client_connection($client) {
     variable_set('content_hub_connector_origin', $client->origin);
     variable_set('content_hub_connector_webhook_url', $client->webhook_url);
     variable_set('content_hub_connector_webhook_uuid', $client->webhook_uuid);
+    variable_set('content_hub_connector_shared_secret', $client->shared_secret);
     return TRUE;
   }
 
